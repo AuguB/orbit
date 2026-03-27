@@ -373,6 +373,11 @@ html, body { height: 100%; overflow: hidden; font-family: -apple-system, BlinkMa
   align-items: center; justify-content: center; background: var(--bg); z-index: 100;
   gap: 16px;
 }
+#contrib-stabilizing {
+  position: absolute; inset: 0; display: none; flex-direction: column;
+  align-items: center; justify-content: center; background: var(--bg-0); z-index: 20;
+  gap: 14px;
+}
 .spinner {
   width: 36px; height: 36px; border: 3px solid var(--bdr);
   border-top-color: var(--blue-hi); border-radius: 50%; animation: spin 0.8s linear infinite;
@@ -501,41 +506,74 @@ html.light .filter-date { color-scheme: light; }
 /* ── Contributor node tile ── */
 .contrib-node {
   position: absolute;
-  width: 190px;
-  background: var(--bg-1);
-  border: 1px solid var(--bdr);
-  border-radius: 8px;
   user-select: none;
-  transition: border-color 0.15s, box-shadow 0.15s, opacity 0.2s;
   will-change: transform;
+  cursor: pointer;
+  z-index: 1;
 }
-.contrib-node:hover { border-color: var(--blue-hi); box-shadow: 0 0 0 1px var(--blue-hid); }
 .contrib-node.dimmed { opacity: 0.12; }
-.contrib-node.highlighted { border-color: var(--blue-hi); box-shadow: 0 0 12px var(--blue-hid); z-index: 5; }
-.cnode-header {
-  padding: 8px 10px;
-  cursor: grab;
+.contrib-node.highlighted { z-index: 5; }
+
+.cnode-pill {
   display: flex;
   align-items: center;
-  gap: 8px;
-  border-bottom: 1px solid var(--bdr-s);
+  width: 40px;
+  height: 40px;
+  box-sizing: border-box;
+  border-radius: 20px;
+  background: var(--bg-1);
+  border: 2px solid var(--bdr);
+  overflow: hidden;
+  transition: width 0.2s ease, border-color 0.15s, box-shadow 0.15s;
+  cursor: grab;
 }
-.cnode-header:active { cursor: grabbing; }
-.cnode-avatar { width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0; }
-.cnode-info { flex: 1; min-width: 0; }
-.cnode-name { font-weight: 600; font-size: 12px; color: var(--blue-hi); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.cnode-stats { font-size: 10px; color: var(--txt-m); margin-top: 2px; }
-.cnode-repos {
-  padding: 5px 10px 6px;
-  font-size: 10px; color: var(--txt-m);
-  display: flex; flex-wrap: wrap; gap: 3px;
-  max-height: 54px; overflow-y: auto;
+.cnode-pill:active { cursor: grabbing; }
+.contrib-node:hover .cnode-pill { border-color: var(--blue-hi); box-shadow: 0 0 0 2px var(--blue-hid); }
+.contrib-node.highlighted .cnode-pill { border-color: var(--blue-hi); box-shadow: 0 0 12px var(--blue-hid); }
+.contrib-node.expanded .cnode-pill,
+.contrib-node.open .cnode-pill { width: 190px; }
+
+.cnode-avatar { width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; }
+
+.cnode-inline {
+  flex: 1;
+  min-width: 0;
+  max-width: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-width 0.2s ease, opacity 0.15s;
+  padding: 0;
 }
-.cnode-repo-tag {
-  padding: 1px 5px; background: var(--bg-2); border: 1px solid var(--bdr);
-  border-radius: 8px; color: var(--txt-m); cursor: default; white-space: nowrap;
-  font-size: 9px;
+.contrib-node.expanded .cnode-inline,
+.contrib-node.open .cnode-inline { max-width: 150px; opacity: 1; padding: 0 8px; }
+.cnode-name { font-weight: 600; font-size: 11px; color: var(--blue-hi); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cnode-stats-small { font-size: 9px; color: var(--txt-m); white-space: nowrap; }
+
+.cnode-dropdown {
+  display: none;
+  position: absolute;
+  top: 20px;
+  left: 0;
+  width: 190px;
+  background: var(--bg-1);
+  border: 2px solid var(--bdr);
+  border-top: none;
+  border-radius: 0 0 12px 12px;
+  padding: 24px 10px 8px;
+  font-size: 10px;
+  color: var(--txt-m);
+  box-sizing: border-box;
+  z-index: -1;
 }
+.contrib-node.open .cnode-dropdown { display: block; }
+.cnode-section-label { font-size: 8px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--txt-m); margin-bottom: 3px; opacity: 0.7; }
+.cnode-lang-row { display: flex; align-items: center; gap: 5px; margin: 2px 0; }
+.cnode-lang-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; display: inline-block; }
+.cnode-lang-name { flex: 1; color: var(--txt); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cnode-lang-pct { font-size: 9px; color: var(--txt-m); }
+.cnode-repo-row { display: flex; align-items: center; gap: 5px; margin: 2px 0; }
+.cnode-repo-name { flex: 1; color: var(--txt); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; }
+.cnode-repo-commits { font-size: 9px; color: var(--txt-m); white-space: nowrap; }
 
 /* ── Contributor edges ── */
 .contrib-edge { stroke: var(--blue-edge); fill: none; }
@@ -798,6 +836,10 @@ html.light .filter-date { color-scheme: light; }
       <g id="edges-group"></g>
     </svg>
     <div id="nodes-layer"></div>
+    <div id="contrib-stabilizing">
+      <div class="spinner"></div>
+      <div class="loading-text">Stabilizing layout…</div>
+    </div>
     <button class="sidebar-reveal-btn left" id="reveal-left" onclick="toggleSidebar('left')" title="Show settings">▶</button>
     <button class="sidebar-reveal-btn right" id="reveal-right" onclick="toggleSidebar('right')" title="Show stats">◀</button>
     <div id="zoom-controls">
@@ -912,6 +954,7 @@ let links = [];          // simulation links
 let simulation = null;
 let vpTransform = { x: 0, y: 0, k: 1 };   // viewport pan/zoom
 let hoveredNodeId = null;
+let hoveredContribPair = null;  // { a, b } when a pair stat row is hovered
 let highlightedDepName = null;
 let highlightedContribLogin = null;
 let focusedNodeId = null;
@@ -929,6 +972,7 @@ let contribLinks = [];   // { source, target, weight }
 let contribSimulation = null;
 let contribEdgeEls = null;
 let contribInitialized = false;
+let contribStabilized = false;
 const contribFilterState = { name: '', minConnections: 0 };
 
 // ============================================================
@@ -1649,15 +1693,11 @@ function zoomBy(factor) {
 // ============================================================
 function setupNodeInteraction(el, node) {
   // Hover
-  let hoverTimer;
   el.addEventListener('mouseenter', () => {
-    hoverTimer = setTimeout(() => {
-      hoveredNodeId = node.id;
-      applyHighlight();
-    }, 618);
+    hoveredNodeId = node.id;
+    applyHighlight();
   });
   el.addEventListener('mouseleave', () => {
-    clearTimeout(hoverTimer);
     hoveredNodeId = null;
     applyHighlight();
   });
@@ -1757,21 +1797,26 @@ function applyHighlight() {
     .classed('highlighted', d => {
       const sid = typeof d.source === 'object' ? d.source.id : d.source;
       const tid = typeof d.target === 'object' ? d.target.id : d.target;
-      return relatedIds.has(sid) && relatedIds.has(tid);
+      // Star pattern: only edges incident to the directly active node
+      return activeNodeId
+        ? (sid === activeNodeId || tid === activeNodeId)
+        : (relatedIds.has(sid) && relatedIds.has(tid));
     })
     .attr('marker-end', d => {
       const sid = typeof d.source === 'object' ? d.source.id : d.source;
       const tid = typeof d.target === 'object' ? d.target.id : d.target;
-      return (relatedIds.has(sid) && relatedIds.has(tid))
-        ? 'url(#arrowhead-hi)'
-        : 'url(#arrowhead)';
+      const hi = activeNodeId
+        ? (sid === activeNodeId || tid === activeNodeId)
+        : (relatedIds.has(sid) && relatedIds.has(tid));
+      return hi ? 'url(#arrowhead-hi)' : 'url(#arrowhead)';
     })
     .attr('marker-mid', d => {
       const sid = typeof d.source === 'object' ? d.source.id : d.source;
       const tid = typeof d.target === 'object' ? d.target.id : d.target;
-      return (relatedIds.has(sid) && relatedIds.has(tid))
-        ? 'url(#arrowhead-mid-hi)'
-        : 'url(#arrowhead-mid)';
+      const hi = activeNodeId
+        ? (sid === activeNodeId || tid === activeNodeId)
+        : (relatedIds.has(sid) && relatedIds.has(tid));
+      return hi ? 'url(#arrowhead-mid-hi)' : 'url(#arrowhead-mid)';
     });
 }
 
@@ -1862,10 +1907,28 @@ function initPanZoom() {
   });
 }
 
+const _REPAINT_THRESHOLDS = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 2.5, 3.0];
+let _lastRepaintThresh = -1;
+
 function applyVpTransform() {
   const t = `translate(${vpTransform.x}px, ${vpTransform.y}px) scale(${vpTransform.k})`;
   document.getElementById('edges-svg').style.transform = t;
   document.getElementById('nodes-layer').style.transform = t;
+
+  // Force re-rasterization of compositor layers when zoom crosses a threshold,
+  // preventing blurry text and images at high magnification.
+  let thresh = 0;
+  for (let i = 0; i < _REPAINT_THRESHOLDS.length; i++) {
+    if (vpTransform.k >= _REPAINT_THRESHOLDS[i]) thresh = i + 1;
+  }
+  if (thresh !== _lastRepaintThresh) {
+    _lastRepaintThresh = thresh;
+    const layer = document.getElementById('nodes-layer');
+    requestAnimationFrame(() => {
+      layer.style.opacity = '0.9999';
+      requestAnimationFrame(() => { layer.style.opacity = ''; });
+    });
+  }
 }
 
 // The SVG needs to be big enough in local coords; override its dimensions
@@ -1992,13 +2055,13 @@ let _sidebarHoverTimer;
 function setHighlightDep(name) {
   clearTimeout(_sidebarHoverTimer);
   if (name === null) { highlightedDepName = null; applyHighlight(); return; }
-  _sidebarHoverTimer = setTimeout(() => { highlightedDepName = name; applyHighlight(); }, 618);
+  highlightedDepName = name; applyHighlight();
 }
 
 function setHighlightContrib(login) {
   clearTimeout(_sidebarHoverTimer);
   if (login === null) { highlightedContribLogin = null; applyHighlight(); return; }
-  _sidebarHoverTimer = setTimeout(() => { highlightedContribLogin = login; applyHighlight(); }, 618);
+  highlightedContribLogin = login; applyHighlight();
 }
 
 function esc(str) {
@@ -2052,6 +2115,7 @@ function switchTab(tab) {
     initContributorsGraph();
   } else {
     if (contribSimulation) contribSimulation.stop();
+    document.getElementById('contrib-stabilizing').style.display = 'none';
     document.getElementById('nodes-layer').innerHTML = '';
     d3.select('#edges-group').selectAll('*').remove();
     contribEdgeEls = null;
@@ -2075,12 +2139,20 @@ function buildContributorData() {
         contribMap[c.login] = {
           id: c.login, login: c.login,
           avatar_url: c.avatar_url, profile_url: c.profile_url,
-          repos: [], totalCommits: 0, totalPRs: 0,
+          repos: [], repoDetails: [], totalCommits: 0, totalPRs: 0,
+          languages: {},
         };
       }
-      contribMap[c.login].repos.push(repo.id);
-      contribMap[c.login].totalCommits += c.commit_count || 0;
-      contribMap[c.login].totalPRs += c.pr_count || 0;
+      const cm = contribMap[c.login];
+      cm.repos.push(repo.id);
+      cm.repoDetails.push({ id: repo.id, commits: c.commit_count || 0, prs: c.pr_count || 0 });
+      cm.totalCommits += c.commit_count || 0;
+      cm.totalPRs += c.pr_count || 0;
+      if (repo.languages) {
+        Object.entries(repo.languages).forEach(([lang, bytes]) => {
+          cm.languages[lang] = (cm.languages[lang] || 0) + bytes;
+        });
+      }
     });
   });
   return Object.values(contribMap);
@@ -2104,41 +2176,106 @@ function buildContributorLinks(contribList) {
   });
 }
 
+function findContribComponents(nodes, links) {
+  const parent = Object.fromEntries(nodes.map(n => [n.id, n.id]));
+  const find = id => { if (parent[id] !== id) parent[id] = find(parent[id]); return parent[id]; };
+  links.forEach(l => { parent[find(l.source)] = find(l.target); });
+  const groups = {};
+  nodes.forEach(n => { const root = find(n.id); (groups[root] = groups[root] || []).push(n); });
+  return Object.values(groups);
+}
+
 function initContributorsGraph() {
   const container = document.getElementById('graph-container');
   const W = container.clientWidth;
   const H = container.clientHeight;
 
   if (!contribInitialized) {
-    const rng = d3.randomLcg(99);
     const contribData = buildContributorData();
-    contribNodes = contribData.map(c => ({
-      ...c,
-      x: W / 2 + (rng() - 0.5) * Math.min(W, 600),
-      y: H / 2 + (rng() - 0.5) * Math.min(H, 400),
-    }));
     contribLinks = buildContributorLinks(contribData);
+
+    // Degree of each contributor (number of co-contributor edges)
+    const degree = {};
+    contribLinks.forEach(l => {
+      degree[l.source] = (degree[l.source] || 0) + 1;
+      degree[l.target] = (degree[l.target] || 0) + 1;
+    });
+
+    // Connected components, largest first
+    const components = findContribComponents(contribData, contribLinks)
+      .sort((a, b) => b.length - a.length);
+
+    // Golden angle Fibonacci spiral: one spiral per component.
+    // Largest component is centred at the viewport centre; subsequent components
+    // are placed outward along their own golden-angle positions.
+    const PHI = Math.PI * (3 - Math.sqrt(5)); // ≈ 137.508°
+    const nodeSpacing = 55;   // radial scale within a component
+    const compGap = nodeSpacing * 2;
+    const posMap = {};
+    let nodesSoFar = 0;
+
+    components.forEach((comp, ci) => {
+      let cx, cy;
+      if (ci === 0) {
+        cx = W / 2; cy = H / 2;
+      } else {
+        // Place this component's centre far enough to avoid overlap with all preceding spirals
+        const r = nodeSpacing * (Math.sqrt(nodesSoFar) + Math.sqrt(comp.length)) + compGap;
+        cx = W / 2 + r * Math.cos(ci * PHI);
+        cy = H / 2 + r * Math.sin(ci * PHI);
+      }
+      nodesSoFar += comp.length;
+
+      // Within the component: most-connected node at centre, rest spiral outward
+      [...comp]
+        .sort((a, b) => (degree[b.id] || 0) - (degree[a.id] || 0))
+        .forEach((node, i) => {
+          posMap[node.id] = {
+            x: cx + nodeSpacing * Math.sqrt(i) * Math.cos(i * PHI),
+            y: cy + nodeSpacing * Math.sqrt(i) * Math.sin(i * PHI),
+          };
+        });
+    });
+
+    contribNodes = contribData.map(c => ({ ...c, ...posMap[c.id] }));
 
     contribSimulation = d3.forceSimulation(contribNodes)
       .randomSource(d3.randomLcg(99))
+      .alphaDecay(0.06)
       .force('link', d3.forceLink(contribLinks).id(d => d.id)
         .distance(180)
         .strength(d => Math.min(d.weight / 5, 0.6)))
       .force('charge', d3.forceManyBody().strength(-180))
-      .force('collision', d3.forceCollide(55))
-      .force('x', d3.forceX(W / 2).strength(0.08))
-      .force('y', d3.forceY(H / 2).strength(0.08))
+      .force('collision', d3.forceCollide(32))
       .stop();
 
-    contribSimulation.tick(300);
     contribInitialized = true;
+  }
+
+  // Synchronously tick to a stable layout — instant (~10ms), no visible physics chaos.
+  // alphaDecay=0.06 means ~120 ticks reach alphaMin; tick 200 to be safe.
+  if (!contribStabilized) {
+    contribSimulation.tick(200);
+    contribStabilized = true;
   }
 
   renderContributorEdges();
   renderContributorNodes();
   onContribTick();
   fitViewContrib();
-  contribSimulation.on('tick', onContribTick).restart();
+
+  // Fade the overlay out to reveal the already-stable graph
+  const overlay = document.getElementById('contrib-stabilizing');
+  overlay.style.display = 'flex';
+  overlay.style.opacity = '1';
+  overlay.style.transition = '';
+  requestAnimationFrame(() => {
+    overlay.style.transition = 'opacity 0.5s ease';
+    overlay.style.opacity = '0';
+    setTimeout(() => { overlay.style.display = 'none'; overlay.style.opacity = ''; overlay.style.transition = ''; }, 520);
+  });
+
+  contribSimulation.on('tick', onContribTick).on('end', null).restart();
 
   initContributorFilterPanel();
   applyContributorFilters();
@@ -2151,7 +2288,7 @@ function renderContributorEdges() {
     .data(contribLinks)
     .join('line')
     .attr('class', 'contrib-edge')
-    .attr('stroke-width', d => Math.max(1, 1 + Math.log(d.weight + 1) * 1.6));
+    .attr('stroke-width', d => Math.max(0.5, Math.sqrt(d.weight) * 1.5));
 }
 
 function renderContributorNodes() {
@@ -2169,53 +2306,101 @@ function createContributorNodeEl(node) {
   el.className = 'contrib-node';
   el.id = `cnode-${CSS.escape(node.id)}`;
 
-  const repoTags = node.repos.slice(0, 10).map(r => `<span class="cnode-repo-tag">${esc(r)}</span>`).join('');
-  const moreRepos = node.repos.length > 10 ? `<span class="cnode-repo-tag">+${node.repos.length - 10}</span>` : '';
+  // Top repos by commit count
+  const topRepos = [...(node.repoDetails || [])].sort((a, b) => b.commits - a.commits).slice(0, 5);
+  const repoRows = topRepos.map(r =>
+    `<div class="cnode-repo-row"><span class="cnode-repo-name">${esc(r.id)}</span><span class="cnode-repo-commits">${r.commits}c</span></div>`
+  ).join('');
+
+  // Top languages by bytes
+  const langEntries = Object.entries(node.languages || {}).sort((a, b) => b[1] - a[1]).slice(0, 4);
+  const totalBytes = langEntries.reduce((s, [, b]) => s + b, 0);
+  const langRows = langEntries.map(([lang, bytes]) => {
+    const pct = Math.round(bytes / totalBytes * 100);
+    const color = LANG_COLORS[lang] || '#8b949e';
+    return `<div class="cnode-lang-row"><span class="cnode-lang-dot" style="background:${color}"></span><span class="cnode-lang-name">${esc(lang)}</span><span class="cnode-lang-pct">${pct}%</span></div>`;
+  }).join('');
 
   el.innerHTML = `
-    <div class="cnode-header" data-cnode="${esc(node.id)}">
+    <div class="cnode-pill">
       <img class="cnode-avatar" src="${esc(node.avatar_url || '')}" alt="${esc(node.login)}" loading="lazy">
-      <div class="cnode-info">
+      <div class="cnode-inline">
         <div class="cnode-name"><a href="${esc(node.profile_url || '#')}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:inherit;text-decoration:none">${esc(node.login)}</a></div>
-        <div class="cnode-stats">${node.repos.length} repo${node.repos.length !== 1 ? 's' : ''} · ${node.totalCommits} commits</div>
+        <div class="cnode-stats-small">${node.repos.length} repo${node.repos.length !== 1 ? 's' : ''} · ${node.totalCommits} commits</div>
       </div>
     </div>
-    <div class="cnode-repos">${repoTags}${moreRepos}</div>
+    <div class="cnode-dropdown">
+      ${langRows ? `<div class="cnode-section-label">Languages</div>${langRows}` : ''}
+      ${repoRows ? `<div class="cnode-section-label" style="margin-top:6px">Top repos</div>${repoRows}` : ''}
+    </div>
   `;
   return el;
 }
 
 function setupContributorNodeInteraction(el, node) {
-  let hoverTimer;
   el.addEventListener('mouseenter', () => {
-    hoverTimer = setTimeout(() => {
-      hoveredNodeId = node.id;
-      applyContributorHighlight();
-    }, 618);
+    hoveredNodeId = node.id;
+    el.classList.add('expanded');
+    applyContributorHighlight();
   });
   el.addEventListener('mouseleave', () => {
-    clearTimeout(hoverTimer);
     hoveredNodeId = null;
+    el.classList.remove('expanded', 'open');
     applyContributorHighlight();
   });
 
-  const header = el.querySelector('.cnode-header');
-  header.addEventListener('mousedown', e => {
+  const pill = el.querySelector('.cnode-pill');
+  pill.addEventListener('mousedown', e => {
     if (e.button !== 0) return;
     e.preventDefault();
     e.stopPropagation();
     startContributorNodeDrag(e, node);
   });
+  pill.addEventListener('click', e => {
+    if (_dragHappened) { _dragHappened = false; return; }
+    e.stopPropagation();
+    el.classList.toggle('open');
+  });
+
+  // Prevent dropdown clicks from bubbling to the graph pan handler
+  const dropdown = el.querySelector('.cnode-dropdown');
+  if (dropdown) dropdown.addEventListener('mousedown', e => e.stopPropagation());
 }
 
 function applyContributorHighlight() {
   const activeId = hoveredNodeId;
-  if (!activeId) {
+  const pair = hoveredContribPair;
+
+  if (!activeId && !pair) {
     document.querySelectorAll('.contrib-node').forEach(el => el.classList.remove('dimmed', 'highlighted'));
     contribEdgeEls && contribEdgeEls.classed('dimmed', false).classed('highlighted', false);
     return;
   }
 
+  if (pair) {
+    // Pair mode: highlight only the two nodes and their single connecting edge
+    const { a, b } = pair;
+    document.querySelectorAll('.contrib-node').forEach(el => {
+      const nodeId = el.id.startsWith('cnode-') ? el.id.slice(6) : null;
+      if (!nodeId) return;
+      el.classList.toggle('dimmed', nodeId !== a && nodeId !== b);
+      el.classList.toggle('highlighted', nodeId === a || nodeId === b);
+    });
+    contribEdgeEls && contribEdgeEls
+      .classed('dimmed', d => {
+        const sid = typeof d.source === 'object' ? d.source.id : d.source;
+        const tid = typeof d.target === 'object' ? d.target.id : d.target;
+        return !((sid === a && tid === b) || (sid === b && tid === a));
+      })
+      .classed('highlighted', d => {
+        const sid = typeof d.source === 'object' ? d.source.id : d.source;
+        const tid = typeof d.target === 'object' ? d.target.id : d.target;
+        return (sid === a && tid === b) || (sid === b && tid === a);
+      });
+    return;
+  }
+
+  // Single-node star mode: highlight node + neighbors, only edges incident to activeId
   const relatedIds = new Set([activeId]);
   contribLinks.forEach(l => {
     const sid = typeof l.source === 'object' ? l.source.id : l.source;
@@ -2235,13 +2420,31 @@ function applyContributorHighlight() {
     .classed('dimmed', d => {
       const sid = typeof d.source === 'object' ? d.source.id : d.source;
       const tid = typeof d.target === 'object' ? d.target.id : d.target;
-      return !relatedIds.has(sid) || !relatedIds.has(tid);
+      return sid !== activeId && tid !== activeId;
     })
     .classed('highlighted', d => {
       const sid = typeof d.source === 'object' ? d.source.id : d.source;
       const tid = typeof d.target === 'object' ? d.target.id : d.target;
-      return relatedIds.has(sid) && relatedIds.has(tid);
+      return sid === activeId || tid === activeId;
     });
+}
+
+function setContribGraphHover(login) {
+  hoveredNodeId = login;
+  hoveredContribPair = null;
+  applyContributorHighlight();
+}
+
+function clearContribGraphHover() {
+  hoveredNodeId = null;
+  hoveredContribPair = null;
+  applyContributorHighlight();
+}
+
+function setContribPairHover(a, b) {
+  hoveredNodeId = null;
+  hoveredContribPair = { a, b };
+  applyContributorHighlight();
 }
 
 function startContributorNodeDrag(e, node) {
@@ -2283,7 +2486,7 @@ function onContribTick() {
   }
   contribNodes.forEach(n => {
     const el = document.getElementById(`cnode-${CSS.escape(n.id)}`);
-    if (el) el.style.transform = `translate(${n.x - CONTRIB_NODE_WIDTH / 2}px, ${n.y - 42}px)`;
+    if (el) el.style.transform = `translate(${n.x - 20}px, ${n.y - 20}px)`;
   });
 }
 
@@ -2293,9 +2496,9 @@ function fitViewContrib() {
   const visible = contribNodes.filter(n => !n._hidden);
   if (!visible.length) return;
   const xs = visible.map(n => n.x), ys = visible.map(n => n.y);
-  const minX = Math.min(...xs) - CONTRIB_NODE_WIDTH / 2;
-  const maxX = Math.max(...xs) + CONTRIB_NODE_WIDTH / 2;
-  const minY = Math.min(...ys) - 42, maxY = Math.max(...ys) + 80;
+  const minX = Math.min(...xs) - 20;
+  const maxX = Math.max(...xs) + 20;
+  const minY = Math.min(...ys) - 20, maxY = Math.max(...ys) + 20;
   const gW = maxX - minX, gH = maxY - minY;
   const k = Math.min((W - pad * 2) / gW, (H - pad * 2) / gH, 3);
   vpTransform.k = k;
@@ -2430,7 +2633,9 @@ function updateContributorStats() {
 
   const topContribEl = document.getElementById('cstats-top-contributors');
   if (topContribEl) topContribEl.innerHTML = topByDegree.map(({ node, deg }) => `
-    <div class="contrib-stat-row">
+    <div class="contrib-stat-row"
+         onmouseenter="setContribGraphHover('${esc(node.login)}')"
+         onmouseleave="clearContribGraphHover()">
       <img class="contrib-stat-avatar" src="${esc(node.avatar_url || '')}" alt="${esc(node.login)}" loading="lazy">
       <span class="contrib-stat-name">${esc(node.login)}</span>
       <span class="contrib-stat-count">${deg} conn · ${node.repos.length} repos</span>
@@ -2444,7 +2649,9 @@ function updateContributorStats() {
     const sn = contribNodes.find(n => n.id === sid);
     const tn = contribNodes.find(n => n.id === tid);
     if (!sn || !tn) return '';
-    return `<div class="contrib-stat-row">
+    return `<div class="contrib-stat-row"
+         onmouseenter="setContribPairHover('${esc(sid)}', '${esc(tid)}')"
+         onmouseleave="clearContribGraphHover()">
       <img class="contrib-stat-avatar" src="${esc(sn.avatar_url||'')}" alt="${esc(sid)}" loading="lazy">
       <img class="contrib-stat-avatar" src="${esc(tn.avatar_url||'')}" alt="${esc(tid)}" loading="lazy">
       <span class="contrib-stat-name">${esc(sid)} &amp; ${esc(tid)}</span>

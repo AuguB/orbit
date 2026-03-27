@@ -31,13 +31,15 @@ except ImportError:
 
 
 class GitHubClient:
-    def __init__(self, token):
+    def __init__(self, token=None):
         self.session = requests.Session()
-        self.session.headers.update({
-            "Authorization": f"token {token}",
+        headers = {
             "Accept": "application/vnd.github.v3+json",
             "X-GitHub-Api-Version": "2022-11-28",
-        })
+        }
+        if token:
+            headers["Authorization"] = f"token {token}"
+        self.session.headers.update(headers)
         self.base_url = "https://api.github.com"
 
     def get(self, path, params=None):
@@ -376,32 +378,35 @@ Examples:
         print("  Pass it as an argument or set GITHUB_ORG in .env")
         sys.exit(1)
 
-    token = args.token or os.environ.get("GITHUB_TOKEN")
+    token = args.token or os.environ.get("GITHUB_TOKEN") or None
     if not token:
-        print("Error: GitHub token required.")
-        print("  Set GITHUB_TOKEN environment variable or pass --token <token>")
-        print("  Token needs: read:org, repo (or public_repo for public-only)")
-        sys.exit(1)
+        print("Warning: No GitHub token provided. Running unauthenticated.")
+        print("  Consequences:")
+        print("    - Rate limit: 60 requests/hour (vs 5,000 with a token) — may fail for orgs with many repos")
+        print("    - Private repositories will not be accessible")
+        print("  To authenticate: set GITHUB_TOKEN env var or pass --token <token>")
+        print("  Token needs: read:org, repo (or public_repo for public-only)\n")
 
     client = GitHubClient(token)
 
-    try:
-        user = client.get_json("/user")
-    except requests.exceptions.HTTPError as e:
-        if e.response.status_code == 401:
-            print("Error: Authentication failed (401 Unauthorized).")
-            print("  Possible causes:")
-            print("    - Token is invalid, expired, or revoked")
-            print("    - Token was copy-pasted incorrectly (check for extra spaces/newlines)")
-            print("    - If using SSO, authorize the token for your org at:")
-            print("      https://github.com/settings/tokens → Configure SSO")
-            print("  Required scopes: repo (or public_repo), read:org")
+    if token:
+        try:
+            user = client.get_json("/user")
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 401:
+                print("Error: Authentication failed (401 Unauthorized).")
+                print("  Possible causes:")
+                print("    - Token is invalid, expired, or revoked")
+                print("    - Token was copy-pasted incorrectly (check for extra spaces/newlines)")
+                print("    - If using SSO, authorize the token for your org at:")
+                print("      https://github.com/settings/tokens → Configure SSO")
+                print("  Required scopes: repo (or public_repo), read:org")
+                sys.exit(1)
+            raise
+        if not user:
+            print("Error: Could not authenticate. Check your token.")
             sys.exit(1)
-        raise
-    if not user:
-        print("Error: Could not authenticate. Check your token.")
-        sys.exit(1)
-    print(f"Authenticated as: {user.get('login')}")
+        print(f"Authenticated as: {user.get('login')}")
 
     print(f"\nFetching repos for org: {org}")
     repos = client.get_all_pages(f"/orgs/{org}/repos", {"type": "all", "sort": "updated"}, max_pages=50)
